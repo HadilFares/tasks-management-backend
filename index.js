@@ -1,20 +1,32 @@
 const express = require("express");
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 const moment = require("moment");
 const cors = require("cors");
 var path = require("path");
 var xlsx = require("xlsx");
 const app = express();
+const dotenv= require('dotenv');
 const UserModel = require("./models/User");
-const User = require("./models/User");
+
 const { send } = require("process");
 const { Console } = require("console");
-app.use(express.json());
-app.use(cors());
-mongoose.connect("mongodb://localhost:27017/crudApp", {
+//Import Routes 
+const authRoute=require('./routes/auth');
+dotenv.config();
+// connect to db
+mongoose.connect("mongodb://localhost:27017/crudApp",{
   useNewUrlParser: true,
   useUnifiedTopology: true,
-});
+  useCreateIndex: true,
+},()=>console.log('connected to db'));
+// Middleware
+app.use(express.json());
+//Route Middleware
+app.use('/api/user',authRoute);
+
+app.use(cors());
+
+
 
 app.use(express.static(path.resolve(__dirname, "public")));
 

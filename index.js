@@ -4,26 +4,31 @@ const moment = require("moment");
 const cors = require("cors");
 var path = require("path");
 var xlsx = require("xlsx");
+const bcrypt = require("bcrypt");
 const app = express();
-const dotenv= require('dotenv');
+//const dotenv= require('dotenv');
 const UserModel = require("./models/User");
+const TaskModel=require("./models/Task");
 
 const { send } = require("process");
 const { Console } = require("console");
 //Import Routes 
 const authRoute=require('./routes/auth');
-dotenv.config();
+const sendMail = require('./routes/mailer');
+require('dotenv').config();
+
 // connect to db
-mongoose.connect("mongodb://localhost:27017/crudApp",{
+mongoose.connect(process.env.DB_CONNECT,{
   useNewUrlParser: true,
   useUnifiedTopology: true,
   useCreateIndex: true,
 },()=>console.log('connected to db'));
+
 // Middleware
 app.use(express.json());
 //Route Middleware
 app.use('/api/user',authRoute);
-
+app.use('/api',sendMail);
 app.use(cors());
 
 
@@ -31,30 +36,29 @@ app.use(cors());
 app.use(express.static(path.resolve(__dirname, "public")));
 
 app.post("/create", async (req, res) => {
-  const matricule = req.body.matricule;
-  const name = req.body.name;
-  const lastname = req.body.lastname;
-  const dateDemarrage = req.body.dateDemarrage;
+  let {matricule ,email , name, lastname , dateDemarrage} = req.body;
   const newUser = new UserModel({
     matricule: matricule,
+    email : email,
     name: name,
     lastname: lastname,
     dateDemarrage: dateDemarrage,
   });
   try {
     await newUser.save();
-    res.send("inserted data");
+    res.status(200).json({id :newUser._id});
   } catch (error) {
     console.error(error);
   }
 });
+
 
 app.get("/read", async (req, res) => {
   UserModel.find({}, (error, result) => {
     if (error) {
       res.send(error);
     }
-    res.send(result);
+    res.status(200).send(result);
   });
 });
 app.delete("/delete/:id", async (req, res) => {
@@ -65,6 +69,10 @@ app.delete("/delete/:id", async (req, res) => {
 
 app.put("/update/:id", async (req, res) => {
   try {
+    if (req.body.password){
+      const salt = await bcrypt.genSalt(10);
+      req.body.password = await bcrypt.hash(req.body.password, salt);
+    }
     const updatedUser = await UserModel.findByIdAndUpdate(
       req.params.id,
       { ...req.body },
@@ -145,7 +153,70 @@ app.get("/search/:date1/:date2", async (req, res) => {
     res.status(200).json(filtredUsers);
  
 });
+///////////////Tasks///////////
+//create task
+app.post("/tasks",async(req,res)=>{
+  
+  const task=new TaskModel({
+  Title:req.body.Title,
+  DateDebut:req.body.DateDebut,
+  DateDebutPr:req.body.DateDebutPr,
+  DateFin:req.body.DateFin,
+  DateFinPr:req.body.DateFinPr,
+  IdPersonne:req.body.IdPersonne,
+  Description:req.body.Description,
+  Priority:req.body.Priority,
+  Status:req.body.Status
+   
+  });
+  try {
+    await task.save();
+    res.status(201).send(task);
+  }
+  catch(error){
+    res.status(400).send(error);
+  }
+});
+//getTask
+app.get("/tasks/:id",async(req,res)=>{
+  try{
+ const tasks=  await TaskModel.findById(req.params.id);
+ res.status(201).send(tasks);
+}
+catch (error){
+  res.status(400).send(error);
+}
+});
+//read Tasks
+app.get("/read/tasks",async(req,res)=>{
+  TaskModel.find({},(error,result)=>{
+    if(error){
+      res.send(error);
+    }
+    res.status(201).send(result);
+  });
+});
+//delete task
+app.delete("/delete/task/:id",async(req,res)=>{
+  const id =req.params.id;
+  await TaskModel.findByIdAndRemove(id).exec();
+  res.send("deleted");
+});
+//edit task
+app.put("/update/task/:id",async(req,res)=>{
+  try{
+    const updatedTask=await TaskModel.findByIdAndUpdate(
+      req.params.id,
+      {...req.body},
+      {new:true}
 
+    );
+    res.status(201).send(updatedTask);
+
+  }catch (error){
+    res.status(400).send(error);
+  }
+});
 
 
 app.listen(3000, () => {

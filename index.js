@@ -10,12 +10,15 @@ const app = express();
 const UserModel = require("./models/User");
 const TaskModel=require("./models/Task");
 
+
 const { send } = require("process");
 const { Console } = require("console");
 //Import Routes 
 const authRoute=require('./routes/auth');
 const sendMail = require('./routes/mailer');
 require('dotenv').config();
+// Statistics routes
+const stat = require('./routes/statistics')
 
 // connect to db
 mongoose.connect(process.env.DB_CONNECT,{
@@ -27,6 +30,7 @@ mongoose.connect(process.env.DB_CONNECT,{
 // Middleware
 app.use(express.json());
 //Route Middleware
+app.use('/api',stat);
 app.use('/api/user',authRoute);
 app.use('/api',sendMail);
 app.use(cors());
@@ -39,6 +43,7 @@ app.post("/create", async (req, res) => {
   let {matricule ,email , name, lastname , dateDemarrage} = req.body;
   const newUser = new UserModel({
     matricule: matricule,
+    isAdmin:false,
     email : email,
     name: name,
     lastname: lastname,
@@ -156,19 +161,17 @@ app.get("/search/:date1/:date2", async (req, res) => {
 ///////////////Tasks///////////
 //create task
 app.post("/tasks",async(req,res)=>{
-  
+ 
   const task=new TaskModel({
   Title:req.body.Title,
   DateDebut:req.body.DateDebut,
-  DateDebutPr:req.body.DateDebutPr,
   DateFin:req.body.DateFin,
-  DateFinPr:req.body.DateFinPr,
   IdPersonne:req.body.IdPersonne,
   Description:req.body.Description,
   Priority:req.body.Priority,
-  Status:req.body.Status
-   
+  Statut:req.body.Statut
   });
+
   try {
     await task.save();
     res.status(201).send(task);
@@ -178,7 +181,7 @@ app.post("/tasks",async(req,res)=>{
   }
 });
 //getTask
-app.get("/tasks/:id",async(req,res)=>{
+app.get("/task/:id",async(req,res)=>{
   try{
  const tasks=  await TaskModel.findById(req.params.id);
  res.status(201).send(tasks);
@@ -188,7 +191,7 @@ catch (error){
 }
 });
 //read Tasks
-app.get("/read/tasks",async(req,res)=>{
+app.get("/tasks",async(req,res)=>{
   TaskModel.find({},(error,result)=>{
     if(error){
       res.send(error);
@@ -217,7 +220,24 @@ app.put("/update/task/:id",async(req,res)=>{
     res.status(400).send(error);
   }
 });
+//DELETE COMMENT
 
+//ADD comment
+app.put("/add/comment",async(req,res)=>{
+ try {
+  const comments={"res_date":req.body.res_date,
+  "res_text":req.body.res_text,
+  "user_name":res.body.user_name,
+  "id":res.body.id};
+  TaskModel.findByIdAndUpdate(
+    {_id:req.body.id},
+    {$push:{comment:comments}},
+  );
+  res.status(201).send(comments);
+ }
+ catch (error){
+  res.status(400).send(error);
+}});
 
 app.listen(3000, () => {
   console.log("Server running on port 3000 ... ");

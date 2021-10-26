@@ -3,7 +3,7 @@ Schema =mongoose.Schema;
 
 const userSchema=new Schema({
     
-    matricule:{type:String},
+    
     name:{type:String},
     isAdmin:{type:Boolean},
     lastname:{type:String},

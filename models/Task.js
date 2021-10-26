@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 Schema = mongoose.Schema;
 const status = Object.freeze({
   ToDo: "todo",
-  InProgress: "inProgress",
+  InProgress: "inprogress",
   Done: "done",
 });
 const TaskSchema = new Schema({
@@ -10,42 +10,32 @@ const TaskSchema = new Schema({
   DateDebut: { type: Date },
   DateFin: { type: Date },
 
-  
   Description: {
     type: String,
     trim: true,
     required: true,
   },
   Priority: {
-    low: {
-      type: String,
-    },
-    medium: {
-      type: String,
-    },
-    high: {
-      type: String,
-    },
+    type: String,
   },
   Statut: {
     type: String,
     enum: Object.values(status),
   },
-  Comments:{
-    id:{
-      type:String,
+  Comments: [{
+    id: {
+      type: String,
     },
-    res_date:{
-      type:Date,
+    date: {
+      type: Date,
     },
-    res_text
-    :{
-      type:String,
+    text: {
+      type: String,
     },
-    user_name:{
-      type:String
-    }
-  }
+    user_name: {
+      type: String,
+    },
+  }],
 });
 Object.assign(TaskSchema.statics, {
   status,

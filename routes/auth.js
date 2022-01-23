@@ -3,8 +3,7 @@ const UserModel = require("../models/User");
 const { registerValidation, loginValidation } = require("./validation");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const session = require("express-session");
-const dotenv = require("dotenv");
+
 
 router.post("/register", async (req, res) => {
   //lets validate the data before we a user
@@ -50,14 +49,11 @@ router.post("/login", async (req, res) => {
   const { error } = loginValidation(req.body);
   if (error) return res.status(400).json({msg : error.details[0].message});
   //Email doesn't exist
-  const user = await UserModel.findOne({ email: req.body.email });
+ const user = await UserModel.findOne({ email: req.body.email });
   console.log(user);
   if (!user)
     return res.status(400).json({ msg : "email or password doesn't exists" });
  //
-
-  const validPassword = await bcrypt.compare(req.body.password, user.password);
-  if (!validPassword) return res.status(400).json({msg : "Invalide password"});
 
   //create token
   const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);

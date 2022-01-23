@@ -17,7 +17,7 @@ const sendMail = (user, callback) => {
   const mailOptions = {
     from: `"Hadouul", "hedilfares30@gmail.com"`,
      to: `${user.user.email}`,
-    //to: "alabouziri2000@gmail.com",
+    
     subject: "Confirmation",
     html: `<h1>Welcome To Our team <3</h1><br>
             http://localhost:3001/generatepassword/${user.id}`,
